@@ -13,6 +13,7 @@ dns.setServers(["8.8.8.8", "1.1.1.1"]);
 app.use(cors());
 app.use(express.json());
 
+// Replace the placeholder with your Atlas connection string
 const username = encodeURIComponent(process.env.DB_USER);
 const password = encodeURIComponent(process.env.DB_PASS);
 
@@ -24,27 +25,33 @@ async function startServer() {
   try {
     await client.connect();
 
+    // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
 
     console.log("MongoDB connected successfully");
 
-    const database = client.db(process.env.DB_NAME);
-    const usersCollection = database.collection("users");
+    const db = client.db("zap_shift_db");
+    const parcelsCollection = db.collection("parcels");
 
-    app.get("/", (req, res) => {
-      res.status(200).json({
-        success: true,
-        message: "API is running",
-      });
+    // get parcels list
+    app.get("/parcels", async (req, res) => {
+      // query data
+      const query = {};
+      const { email } = req.query;
+      if (email) {
+        query.receiverEmail = email;
+      }
+
+      const cursor = parcelsCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
     });
 
-    app.get("/users", async (req, res) => {
-      const users = await usersCollection.find().toArray();
-
-      res.status(200).json({
-        success: true,
-        data: users,
-      });
+    // parcels post
+    app.post("/parcels", async (req, res) => {
+      const parcel = req.body;
+      const result = await parcelsCollection.insertOne(parcel);
+      res.send(result);
     });
 
     app.listen(port, () => {
