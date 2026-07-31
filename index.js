@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient } = require("mongodb");
+const { MongoClient, ObjectId } = require("mongodb");
 require("dotenv").config();
 
 const app = express();
@@ -33,24 +33,39 @@ async function startServer() {
     const db = client.db("zap_shift_db");
     const parcelsCollection = db.collection("parcels");
 
-    // get parcels list
-    app.get("/parcels", async (req, res) => {
+    // get parcels
+    app.get("/parcels", async (req, res) => { 
       // query data
       const query = {};
       const { email } = req.query;
       if (email) {
-        query.receiverEmail = email;
+        query.$or = [{ senderEmail: email }, { receiverEmail: email }];
       }
+      // sort
+      const options = { sort: { createdAt: -1 } };
 
-      const cursor = parcelsCollection.find(query);
+      const cursor = parcelsCollection.find(query, options);
       const result = await cursor.toArray();
       res.send(result);
     });
 
-    // parcels post
+    // post parcels
     app.post("/parcels", async (req, res) => {
       const parcel = req.body;
+      // parcel created time
+      parcel.createdAt = new Date();
+
       const result = await parcelsCollection.insertOne(parcel);
+      res.send(result);
+    });
+
+    // delete parcels
+    app.delete("/parcels/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const query = { _id: new ObjectId(id) };
+      const result = await parcelsCollection.deleteOne(query);
+
       res.send(result);
     });
 
