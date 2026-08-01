@@ -9,6 +9,9 @@ const port = process.env.PORT || 3000;
 const dns = require("dns");
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
+// stripe payment
+const stripe = require("stripe")(process.env.STRIPE_PAYMENT_SECRET);
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -34,7 +37,7 @@ async function startServer() {
     const parcelsCollection = db.collection("parcels");
 
     // get parcels
-    app.get("/parcels", async (req, res) => { 
+    app.get("/parcels", async (req, res) => {
       // query data
       const query = {};
       const { email } = req.query;
@@ -46,6 +49,14 @@ async function startServer() {
 
       const cursor = parcelsCollection.find(query, options);
       const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    // get single product
+    app.get("/parcels/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await parcelsCollection.findOne(query);
       res.send(result);
     });
 
@@ -67,6 +78,47 @@ async function startServer() {
       const result = await parcelsCollection.deleteOne(query);
 
       res.send(result);
+    });
+
+    // payment related api
+    app.post("/create-checkout-session", async (req, res) => {
+      const paymentInfo = req.body;
+      const amount = Number(paymentInfo.cost) * 100;
+
+      if (!Number.isFinite(amount)) {
+        return res.status(400).json({
+          message: "Invalid payment amount",
+          paymentInfo,
+        });
+      }
+      const session = await stripe.checkout.sessions.create({
+        line_items: [
+          {
+            // Provide the exact Price ID (for example, price_1234) of the product you want to sell
+            price_data: {
+              currency: "usd",
+              unit_amount: amount,
+              product_data: {
+                name: paymentInfo.parcelName,
+              },
+            },
+            quantity: 1,
+          },
+        ],
+        customer_email: paymentInfo.senderEmail,
+        mode: "payment",
+        metadata: {
+          parcelId: paymentInfo.parcelId,
+        },
+        success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success`,
+        cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancelled`,
+
+        // Provide a name (for example, hosted_web_0001) to label this Checkout integration and measure its conversion independently
+        // integration_identifier: "{{INTEGRATION_ID}}",
+      });
+
+      console.log(session);
+      res.send({ url: session.url });
     });
 
     app.listen(port, () => {
