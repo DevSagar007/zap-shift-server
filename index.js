@@ -110,8 +110,8 @@ async function startServer() {
         metadata: {
           parcelId: paymentInfo.parcelId,
         },
-        success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success`,
-        cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancelled`,
+        success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancelled?session_id={CHECKOUT_SESSION_ID}`,
 
         // Provide a name (for example, hosted_web_0001) to label this Checkout integration and measure its conversion independently
         // integration_identifier: "{{INTEGRATION_ID}}",
@@ -119,6 +119,26 @@ async function startServer() {
 
       console.log(session);
       res.send({ url: session.url });
+    });
+
+    // Payment status check
+    app.patch("/payment-success", async (req, res) => {
+      const sessionId = req.query.session_id;
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      console.log("session retrieve", session);
+      if (session.payment_status === "paid") {
+        const id = session.metadata.parcelId;
+        const query = { _id: new ObjectId(id) };
+        const update = {
+          $set: {
+            paymentStatus: "paid",
+          },
+        };
+        const result = await parcelsCollection.updateOne(query, update);
+        res.send(result);
+      }
+
+      res.send({ success: false });
     });
 
     app.listen(port, () => {
