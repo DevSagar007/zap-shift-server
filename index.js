@@ -26,10 +26,6 @@ function generateTrackingId() {
   return `${prefix}-${date}-${random}`;
 }
 
-console.log(generateTrackingId());
-const trackingId = generateTrackingId();
-// TRK-20260803-8F2A1C
-
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -145,11 +141,23 @@ async function startServer() {
     app.patch("/payment-success", async (req, res) => {
       const sessionId = req.query.session_id;
       const session = await stripe.checkout.sessions.retrieve(sessionId);
-
       console.log("session retrieve", session);
+
+      // query for transaction id
+      const transactionId = session.payment_intent;
+      const query = { transactionId: transactionId };
+      const PaymentExist = await paymentCollection.findOne(query);
+      if (PaymentExist) {
+        return res.send({
+          message: "already exist",
+          transactionId,
+          trackingId: PaymentExist.trackingId,
+        });
+      }
 
       if (session.payment_status === "paid") {
         const id = session.metadata.parcelId;
+        const trackingId = generateTrackingId();
         const query = { _id: new ObjectId(id) };
         const update = {
           $set: {
@@ -168,6 +176,7 @@ async function startServer() {
           transactionId: session.payment_intent,
           paymentStatus: session.payment_status,
           paidAt: new Date(),
+          trackingId: trackingId,
         };
 
         if (session.payment_status === "paid") {
@@ -176,14 +185,27 @@ async function startServer() {
             success: true,
             modifyParcel: result,
             trackingId: trackingId,
-            transactionId: transactionId,
+            transactionId: payment.transactionId,
             paymentInfo: resultPayment,
           });
         }
+        return;
       }
 
       res.send({ success: false });
     });
+
+    // payment related apis
+    app.get('/payments', async (req,res) => {
+      const email = req.query.email;
+      const query = {}
+      if (email) {
+        query.customerEmail = email
+      }
+      const cursor = paymentCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    })
 
     app.listen(port, () => {
       console.log(`Server running on http://localhost:${port}`);
