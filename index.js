@@ -196,16 +196,36 @@ async function startServer() {
     });
 
     // payment related apis
-    app.get('/payments', async (req,res) => {
+    app.get("/payments", async (req, res) => {
       const email = req.query.email;
-      const query = {}
+
+      const query = {};
+
       if (email) {
-        query.customerEmail = email
+        query.customerEmail = email;
       }
-      const cursor = paymentCollection.find(query);
-      const result = await cursor.toArray();
+
+      const payments = await paymentCollection.find(query).toArray();
+
+      const result = await Promise.all(
+        payments.map(async (payment) => {
+          const parcel = await parcelsCollection.findOne({
+            _id: new ObjectId(payment.parcelId),
+          });
+
+          return {
+            ...payment,
+            receiverName: parcel?.receiverName,
+            receiverAddress: parcel?.receiverAddress,
+            receiverDistrict: parcel?.receiverDistrict,
+            receiverRegion: parcel?.receiverRegion,
+            receiverContact: parcel?.receiverContact,
+          };
+        }),
+      );
+
       res.send(result);
-    })
+    });
 
     app.listen(port, () => {
       console.log(`Server running on http://localhost:${port}`);
