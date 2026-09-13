@@ -193,6 +193,23 @@ async function startServer() {
       const result = await cursor.toArray();
       res.send(result);
     });
+    
+    // rider assign 
+    app.get("/parcels/riders", async (req, res) => {
+      const { riderEmail, deliveryStatus } = req.query;
+      const query = {};
+
+      if (riderEmail) {
+        query.riderEmail = riderEmail;
+      }
+
+      if (deliveryStatus) {
+        query.deliveryStatus = deliveryStatus;
+      }
+      const cursor = parcelsCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
 
     // get single product
     app.get("/parcels/:id", async (req, res) => {
