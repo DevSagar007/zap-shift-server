@@ -183,7 +183,7 @@ async function startServer() {
         query.$or = [{ senderEmail: email }, { receiverEmail: email }];
       }
       if (deliveryStatus) {
-        query.deliveryStatus = deliveryStatus;
+        query.deliveryStatus = { $in: ["diver_assigned", "rider_arriving"] };
       }
 
       // sort
@@ -270,7 +270,7 @@ async function startServer() {
       res.send(riderResult);
     });
 
-    // rider update
+    // TODO rename this to be specific like /parcel/:id/assign
     app.patch(
       "/riders/:id",
       verifyFireBaseToken,
@@ -316,6 +316,18 @@ async function startServer() {
         res.send(result);
       },
     );
+
+    app.patch('/parcels/:id/status', async (req, res) => {
+      const {deliveryStatus} = req.body;
+      const query = {_id: new ObjectId(req.params.id)}
+      const updatedDoc = {
+        $set: {
+          deliveryStatus:deliveryStatus
+        }
+      }
+      const result = await parcelsCollection.updateOne(query, updatedDoc)
+      res.send(result)
+    })
 
     // payment related api
     app.post("/create-checkout-session", async (req, res) => {
