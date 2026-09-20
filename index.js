@@ -183,7 +183,7 @@ async function startServer() {
         query.$or = [{ senderEmail: email }, { receiverEmail: email }];
       }
       if (deliveryStatus) {
-        query.deliveryStatus = { $in: ["diver_assigned", "rider_arriving"] };
+        query.deliveryStatus = deliveryStatus;
       }
 
       // sort
@@ -193,8 +193,8 @@ async function startServer() {
       const result = await cursor.toArray();
       res.send(result);
     });
-    
-    // rider assign 
+
+    // rider assign
     app.get("/parcels/riders", async (req, res) => {
       const { riderEmail, deliveryStatus } = req.query;
       const query = {};
@@ -204,8 +204,10 @@ async function startServer() {
       }
 
       if (deliveryStatus) {
-        query.deliveryStatus = deliveryStatus;
+        // query.deliveryStatus = {$in: ['driver_assigned', 'rider_arriving']};
+        query.deliveryStatus = { $nin: ["parcel_delivered"] };
       }
+
       const cursor = parcelsCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
@@ -317,17 +319,17 @@ async function startServer() {
       },
     );
 
-    app.patch('/parcels/:id/status', async (req, res) => {
-      const {deliveryStatus} = req.body;
-      const query = {_id: new ObjectId(req.params.id)}
+    app.patch("/parcels/:id/status", async (req, res) => {
+      const { deliveryStatus } = req.body;
+      const query = { _id: new ObjectId(req.params.id) };
       const updatedDoc = {
         $set: {
-          deliveryStatus:deliveryStatus
-        }
-      }
-      const result = await parcelsCollection.updateOne(query, updatedDoc)
-      res.send(result)
-    })
+          deliveryStatus: deliveryStatus,
+        },
+      };
+      const result = await parcelsCollection.updateOne(query, updatedDoc);
+      res.send(result);
+    });
 
     // payment related api
     app.post("/create-checkout-session", async (req, res) => {
