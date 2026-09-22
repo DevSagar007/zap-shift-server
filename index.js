@@ -41,6 +41,7 @@ const verifyFireBaseToken = async (req, res, next) => {
 const stripe = require("stripe")(process.env.STRIPE_PAYMENT_SECRET);
 // tracking id
 const crypto = require("crypto");
+const { create } = require("domain");
 
 function generateTrackingId() {
   const prefix = "PRCL"; // Your brand prefix
@@ -80,6 +81,7 @@ async function startServer() {
     const parcelsCollection = db.collection("parcels");
     const paymentCollection = db.collection("payments");
     const ridersCollection = db.collection("rider");
+    const trackingCollection = db.collection("trackings");
 
     // middleware more with database access
     // must be use after verifyFBToken middleware
@@ -94,6 +96,18 @@ async function startServer() {
 
       next();
     };
+const logTracking = async (trackingId, status) => {
+  const log = {
+    trackingId,
+    status,
+    details: status.split("-").join(" "),
+    createdAt: new Date(),
+  };
+
+  const result = await trackingCollection.insertOne(log);
+
+  return result;
+};
 
     // user create apis
     app.post("/users", async (req, res) => {
@@ -203,9 +217,11 @@ async function startServer() {
         query.riderEmail = riderEmail;
       }
 
-      if (deliveryStatus) {
+      if (deliveryStatus !== "parcel_delivered") {
         // query.deliveryStatus = {$in: ['driver_assigned', 'rider_arriving']};
         query.deliveryStatus = { $nin: ["parcel_delivered"] };
+      } else {
+        query.deliveryStatus = deliveryStatus;
       }
 
       const cursor = parcelsCollection.find(query);
@@ -243,7 +259,7 @@ async function startServer() {
 
     // patch rider
     app.patch("/parcels/:id", async (req, res) => {
-      const { riderId, riderName, riderEmail, riderPhone, parcelId } = req.body;
+      const { riderId, riderName, riderEmail, riderPhone, parcelId, trackingId } = req.body;
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
 
@@ -269,6 +285,10 @@ async function startServer() {
         riderQuery,
         riderUpdatedDoc,
       );
+
+      // log tracking
+      logTracking(trackingId, "diver_assigned");
+
       res.send(riderResult);
     });
 
@@ -320,14 +340,34 @@ async function startServer() {
     );
 
     app.patch("/parcels/:id/status", async (req, res) => {
-      const { deliveryStatus } = req.body;
+      const { deliveryStatus, riderId, trackingId} = req.body;
+
       const query = { _id: new ObjectId(req.params.id) };
       const updatedDoc = {
         $set: {
           deliveryStatus: deliveryStatus,
         },
       };
+
+      if (deliveryStatus === "parcel_delivered") {
+        // update rider deliveries status
+        const riderQuery = { _id: new ObjectId(riderId) };
+        const riderUpdatedDoc = {
+          $set: {
+            workStatus: "available",
+          },
+        };
+        const riderResult = await ridersCollection.updateOne(
+          riderQuery,
+          riderUpdatedDoc,
+        );
+      }
+
       const result = await parcelsCollection.updateOne(query, updatedDoc);
+
+      // log tracking
+      logTracking(trackingId, deliveryStatus);
+      
       res.send(result);
     });
 
@@ -418,6 +458,9 @@ async function startServer() {
 
         if (session.payment_status === "paid") {
           const resultPayment = await paymentCollection.insertOne(payment);
+
+          logTracking(trackingId, "pending-pickup");
+
           res.send({
             success: true,
             modifyParcel: result,
