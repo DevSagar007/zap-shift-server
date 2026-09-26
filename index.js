@@ -39,6 +39,7 @@ const verifyFireBaseToken = async (req, res, next) => {
 
 // stripe payment
 const stripe = require("stripe")(process.env.STRIPE_PAYMENT_SECRET);
+
 // tracking id
 const crypto = require("crypto");
 const { create } = require("domain");
@@ -96,6 +97,20 @@ async function startServer() {
 
       next();
     };
+
+    // verify Rider
+  const verifyRider = async (req, res, next) => {
+    const email = req.decoded_email;
+    const query = { email };
+    const user = await userCollection.findOne(query);
+
+    if (!user || user.role !== "rider") {
+      return res.status(403).send({ message: "forbidden access hh" });
+    }
+
+    next();
+  };
+    
     const logTracking = async (trackingId, status) => {
       const log = {
         trackingId,
@@ -236,6 +251,20 @@ async function startServer() {
       const result = await parcelsCollection.findOne(query);
       res.send(result);
     });
+
+    app.get('/parcels/delivery-status/stats', async (req, res) => {
+      const pipeline = [
+        { 
+          $group: {
+            _id: '$deliveryStatus',
+            count: {$sum: 1} 
+          }
+        }
+      ]
+      const result = await parcelsCollection.aggregate(pipeline).toArray();
+      res.send(result);
+
+    })
 
     // post parcels
     app.post("/parcels", async (req, res) => {
