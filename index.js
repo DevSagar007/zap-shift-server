@@ -566,7 +566,7 @@ async function startServer() {
       res.send(result);
     });
 
-    app.get('/riders/delivery-per-day', async (req, res) => {
+    app.get("/riders/delivery-per-day", async (req, res) => {
       const email = req.query.email;
       //aggregate on parcel
       const pipeline = [
@@ -576,10 +576,44 @@ async function startServer() {
             deliveryStatus: "parcel_delivered",
           },
         },
+        {
+          $lookup: {
+            from: "trackings",
+            localField: "trackingId",
+            foreignField: "trackingId",
+            as: "parcel_trackings",
+          },
+        },
+        {
+          $unwind: "$parcel_trackings",
+        },
+        {
+          $match: {
+            "parcel_trackings.status": "parcel_delivered",
+          },
+        },
+        {
+          //convert timestamp to YYYY-MM-DD string
+          $addFields: {
+            deliverDay: {
+              $dateToString: {
+                format: "%Y-%m-%d",
+                date: "$parcel_trackings.createAt",
+              },
+            },
+          },
+        },
+        {
+          // groupe by date
+          $group: {
+            _id: "$deliverDay",
+            deliveredCount: { $sum: 1 },
+          },
+        },
       ];
       const result = await parcelsCollection.aggregate(pipeline).toArray();
-      res.send(result)
-    })
+      res.send(result);
+    });
 
     // riders related apis
 
