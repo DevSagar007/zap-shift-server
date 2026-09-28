@@ -13,10 +13,6 @@ dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
 const serviceAccount = require("./zap-shift-firebase-adminsdk.json");
 
-// Decode
-const decoded = Buffer.from(process.env.FB_SERVICE_KEY, 'base64').toString('utf8')
-const serviceAccount = JSON.parse(decoded);
-
 initializeApp({
   credential: cert(serviceAccount),
 });
