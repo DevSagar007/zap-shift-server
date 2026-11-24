@@ -39,7 +39,7 @@ router.post("/auth/session", async (req, res) => {
       maxAge: SESSION_MAX_AGE,
     });
 
-    res.send({ success: true });
+    res.send({ success: true, csrfToken });
   } catch {
     throw new HttpError(401, "Unable to create a secure Zap Shift session.");
   }
