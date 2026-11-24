@@ -36,7 +36,7 @@ async function createCheckoutSession(paymentInfo) {
     line_items: [
       {
         price_data: {
-          currency: "usd",
+          currency: "bdt",
           unit_amount: amount,
           product_data: {
             name: paymentInfo.parcelName,
