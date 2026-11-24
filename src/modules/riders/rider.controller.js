@@ -4,13 +4,17 @@ const {
   approveRider,
   getDeliveriesPerDay,
 } = require("./rider.service");
+const { parsePagination, sendPaginated } = require("../../shared/pagination");
 
 async function create(req, res) {
   res.send(await createRider(req.body));
 }
 
 async function list(req, res) {
-  res.send(await listRiders(req.query));
+  const pagination = parsePagination(req.query);
+  const result = await listRiders(req.query, pagination);
+
+  sendPaginated(res, result, pagination);
 }
 
 async function approve(req, res) {

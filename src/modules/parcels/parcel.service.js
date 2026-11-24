@@ -3,6 +3,7 @@ const { COLLECTIONS, DELIVERY_STATUS, WORK_STATUS } = require("../../shared/cons
 const HttpError = require("../../shared/HttpError");
 const { parseObjectId } = require("../../shared/objectId");
 const { generateTrackingId } = require("../../shared/trackingId");
+const { DEFAULT_LIMIT } = require("../../shared/pagination");
 const { setRiderWorkStatus } = require("../riders/rider.service");
 const { logTracking } = require("../trackings/tracking.service");
 
@@ -10,7 +11,8 @@ async function parcelsCollection() {
   return getCollection(COLLECTIONS.PARCELS);
 }
 
-async function listParcels({ email, deliveryStatus }) {
+async function listParcels({ email, deliveryStatus }, pagination = {}) {
+  const { skip = 0, limit = DEFAULT_LIMIT } = pagination;
   const query = {};
 
   if (email) {
@@ -22,11 +24,20 @@ async function listParcels({ email, deliveryStatus }) {
   }
 
   const parcels = await parcelsCollection();
+  const [items, total] = await Promise.all([
+    parcels
+      .find(query, { sort: { createdAt: -1 } })
+      .skip(skip)
+      .limit(limit)
+      .toArray(),
+    parcels.countDocuments(query),
+  ]);
 
-  return parcels.find(query, { sort: { createdAt: -1 } }).toArray();
+  return { items, total };
 }
 
-async function listRiderParcels({ riderEmail, deliveryStatus }) {
+async function listRiderParcels({ riderEmail, deliveryStatus }, pagination = {}) {
+  const { skip = 0, limit = DEFAULT_LIMIT } = pagination;
   const query = {};
 
   if (riderEmail) {
@@ -40,7 +51,16 @@ async function listRiderParcels({ riderEmail, deliveryStatus }) {
   }
 
   const parcels = await parcelsCollection();
-  return parcels.find(query).toArray();
+  const [items, total] = await Promise.all([
+    parcels
+      .find(query, { sort: { createdAt: -1 } })
+      .skip(skip)
+      .limit(limit)
+      .toArray(),
+    parcels.countDocuments(query),
+  ]);
+
+  return { items, total };
 }
 
 async function findParcelById(id) {

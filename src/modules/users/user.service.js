@@ -2,6 +2,7 @@ const { getCollection } = require("../../config/database");
 const { COLLECTIONS, ROLES } = require("../../shared/constants");
 const { parseObjectId } = require("../../shared/objectId");
 const { escapeRegExp } = require("../../shared/text");
+const { DEFAULT_LIMIT } = require("../../shared/pagination");
 
 async function usersCollection() {
   return getCollection(COLLECTIONS.USERS);
@@ -25,7 +26,8 @@ async function createUser(user) {
   return { exists: false, result: await users.insertOne(newUser) };
 }
 
-async function findUsers(searchTerm) {
+async function findUsers(searchTerm, pagination = {}) {
+  const { skip = 0, limit = DEFAULT_LIMIT } = pagination;
   const query = {};
 
   if (searchTerm) {
@@ -35,12 +37,17 @@ async function findUsers(searchTerm) {
   }
 
   const users = await usersCollection();
+  const [items, total] = await Promise.all([
+    users
+      .find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray(),
+    users.countDocuments(query),
+  ]);
 
-  return users
-    .find(query)
-    .sort({ createdAt: -1 })
-    .limit(5)
-    .toArray();
+  return { items, total };
 }
 
 async function findUserByEmail(email) {

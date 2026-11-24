@@ -3,6 +3,7 @@ const {
   confirmPayment,
   listPayments,
 } = require("./payment.service");
+const { parsePagination, sendPaginated } = require("../../shared/pagination");
 
 async function createSession(req, res) {
   res.send(await createCheckoutSession(req.body));
@@ -19,7 +20,10 @@ async function list(req, res) {
     return res.status(403).send({ message: "forbidden access" });
   }
 
-  res.send(await listPayments(email));
+  const pagination = parsePagination(req.query);
+  const result = await listPayments(email, pagination);
+
+  sendPaginated(res, result, pagination);
 }
 
 module.exports = { createSession, paymentSuccess, list };

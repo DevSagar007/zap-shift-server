@@ -8,6 +8,7 @@ const {
 } = require("../../shared/constants");
 const { parseObjectId } = require("../../shared/objectId");
 const { setUserRoleByEmail } = require("../users/user.service");
+const { DEFAULT_LIMIT } = require("../../shared/pagination");
 
 async function ridersCollection() {
   return getCollection(COLLECTIONS.RIDERS);
@@ -24,7 +25,8 @@ async function createRider(rider) {
   return riders.insertOne(newRider);
 }
 
-async function listRiders({ status, district, workStatus }) {
+async function listRiders({ status, district, workStatus }, pagination = {}) {
+  const { skip = 0, limit = DEFAULT_LIMIT } = pagination;
   const query = {};
 
   if (status) {
@@ -40,7 +42,17 @@ async function listRiders({ status, district, workStatus }) {
   }
 
   const riders = await ridersCollection();
-  return riders.find(query).toArray();
+  const [items, total] = await Promise.all([
+    riders
+      .find(query)
+      .sort({ createAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray(),
+    riders.countDocuments(query),
+  ]);
+
+  return { items, total };
 }
 
 async function approveRider(id, { status, email }) {

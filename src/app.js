@@ -9,7 +9,11 @@ const { notFound, errorHandler } = require("./middleware/errorHandler");
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    exposedHeaders: ["X-Total-Count", "X-Page", "X-Limit", "X-Total-Pages"],
+  }),
+);
 app.use(express.json());
 
 app.use(userRoutes);

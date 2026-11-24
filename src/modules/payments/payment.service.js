@@ -6,6 +6,7 @@ const HttpError = require("../../shared/HttpError");
 const { toObjectIdOrNull } = require("../../shared/objectId");
 const { markParcelPaid } = require("../parcels/parcel.service");
 const { logTracking } = require("../trackings/tracking.service");
+const { DEFAULT_LIMIT } = require("../../shared/pagination");
 
 async function paymentsCollection() {
   return getCollection(COLLECTIONS.PAYMENTS);
@@ -115,15 +116,21 @@ async function confirmPayment(sessionId) {
   };
 }
 
-async function listPayments(email) {
+async function listPayments(email, pagination = {}) {
+  const { skip = 0, limit = DEFAULT_LIMIT } = pagination;
   const payments = await paymentsCollection();
   const parcels = await parcelsCollection();
-  const paymentDocs = await payments
-    .find({ customerEmail: email })
-    .sort({ paidAt: -1 })
-    .toArray();
-
-  return Promise.all(
+  const query = { customerEmail: email };
+  const [paymentDocs, total] = await Promise.all([
+    payments
+      .find(query)
+      .sort({ paidAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray(),
+    payments.countDocuments(query),
+  ]);
+  const items = await Promise.all(
     paymentDocs.map(async (payment) => {
       const parcelId = toObjectIdOrNull(payment.parcelId);
       const parcel = parcelId
@@ -140,6 +147,8 @@ async function listPayments(email) {
       };
     }),
   );
+
+  return { items, total };
 }
 
 module.exports = { createCheckoutSession, confirmPayment, listPayments };

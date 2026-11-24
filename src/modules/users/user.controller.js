@@ -4,6 +4,7 @@ const {
   findUserRole,
   updateUserRole,
 } = require("./user.service");
+const { parsePagination, sendPaginated } = require("../../shared/pagination");
 
 async function create(req, res) {
   const result = await createUser(req.body);
@@ -16,7 +17,10 @@ async function create(req, res) {
 }
 
 async function list(req, res) {
-  res.send(await findUsers(req.query.searchTerm));
+  const pagination = parsePagination(req.query);
+  const result = await findUsers(req.query.searchTerm, pagination);
+
+  sendPaginated(res, result, pagination);
 }
 
 async function getRole(req, res) {

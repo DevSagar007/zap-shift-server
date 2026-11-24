@@ -8,13 +8,20 @@ const {
   assignRider,
   updateParcelStatus,
 } = require("./parcel.service");
+const { parsePagination, sendPaginated } = require("../../shared/pagination");
 
 async function list(req, res) {
-  res.send(await listParcels(req.query));
+  const pagination = parsePagination(req.query);
+  const result = await listParcels(req.query, pagination);
+
+  sendPaginated(res, result, pagination);
 }
 
 async function listRiders(req, res) {
-  res.send(await listRiderParcels(req.query));
+  const pagination = parsePagination(req.query);
+  const result = await listRiderParcels(req.query, pagination);
+
+  sendPaginated(res, result, pagination);
 }
 
 async function getById(req, res) {
