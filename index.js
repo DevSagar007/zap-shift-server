@@ -6,7 +6,7 @@ const { initializeApp, cert } = require("firebase-admin/app");
 const { getAuth } = require("firebase-admin/auth");
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 500;
 
 const dns = require("dns");
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
