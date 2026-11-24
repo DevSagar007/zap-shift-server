@@ -73,7 +73,7 @@ async function confirmPayment(sessionId) {
 
   if (existingPayment) {
     return {
-      message: "already exist",
+      message: "This Zap Shift payment has already been confirmed.",
       transactionId,
       trackingId: existingPayment.trackingId,
     };

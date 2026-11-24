@@ -17,7 +17,7 @@ async function list(req, res) {
   const email = req.query.email;
 
   if (!req.decoded_email || email !== req.decoded_email) {
-    return res.status(403).send({ message: "forbidden access" });
+    return res.status(403).send({ message: "You can only view your own Zap Shift payment history." });
   }
 
   const pagination = parsePagination(req.query);

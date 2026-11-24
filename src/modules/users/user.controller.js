@@ -10,7 +10,7 @@ async function create(req, res) {
   const result = await createUser(req.body);
 
   if (result.exists) {
-    return res.send({ message: "user exists" });
+    return res.send({ message: "A Zap Shift account already exists for this email." });
   }
 
   res.send(result.result);

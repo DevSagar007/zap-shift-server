@@ -34,7 +34,7 @@ function requireRole(role) {
     const user = await findUserByEmail(req.decoded_email);
 
     if (!user || user.role !== role) {
-      throw new HttpError(403, "forbidden access");
+      throw new HttpError(403, "You do not have permission to perform this Zap Shift action.");
     }
 
     next();
