@@ -1,0 +1,19 @@
+const { Router } = require("express");
+const controller = require("../modules/riders/rider.controller");
+const { authenticate, requireRole } = require("../middleware/auth");
+const asyncHandler = require("../shared/asyncHandler");
+const { ROLES } = require("../shared/constants");
+
+const router = Router();
+
+router.patch(
+  "/riders/:id",
+  authenticate,
+  requireRole(ROLES.ADMIN),
+  asyncHandler(controller.approve),
+);
+router.get("/riders/delivery-per-day", asyncHandler(controller.deliveriesPerDay));
+router.post("/riders", asyncHandler(controller.create));
+router.get("/riders", asyncHandler(controller.list));
+
+module.exports = router;
