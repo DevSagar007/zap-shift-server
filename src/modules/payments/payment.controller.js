@@ -6,11 +6,14 @@ const {
 const { parsePagination, sendPaginated } = require("../../shared/pagination");
 
 async function createSession(req, res) {
+  if (req.body?.senderEmail !== req.decoded_email) {
+    return res.status(403).send({ message: "You can only pay for your own Zap Shift parcel." });
+  }
   res.send(await createCheckoutSession(req.body));
 }
 
 async function paymentSuccess(req, res) {
-  res.send(await confirmPayment(req.query.session_id));
+  res.send(await confirmPayment(req.query.session_id, req.decoded_email));
 }
 
 async function list(req, res) {

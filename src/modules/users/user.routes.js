@@ -6,9 +6,9 @@ const { ROLES } = require("../../shared/constants");
 
 const router = Router();
 
-router.post("/users", asyncHandler(controller.create));
+router.post("/users", authenticate, asyncHandler(controller.create));
 router.get("/users", authenticate, asyncHandler(controller.list));
-router.get("/users/:email/role", asyncHandler(controller.getRole));
+router.get("/users/:email/role", authenticate, asyncHandler(controller.getRole));
 router.patch(
   "/users/:id/role",
   authenticate,

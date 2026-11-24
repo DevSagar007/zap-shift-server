@@ -59,12 +59,16 @@ async function createCheckoutSession(paymentInfo) {
   return { url: session.url };
 }
 
-async function confirmPayment(sessionId) {
+async function confirmPayment(sessionId, customerEmail) {
   if (!sessionId) {
     throw new HttpError(400, "session_id is required");
   }
 
   const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+  if (session.customer_email !== customerEmail) {
+    throw new HttpError(403, "This payment session does not belong to your Zap Shift account.");
+  }
   const transactionId = session.payment_intent;
   const payments = await paymentsCollection();
   const existingPayment = transactionId

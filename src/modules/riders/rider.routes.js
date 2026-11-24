@@ -12,8 +12,8 @@ router.patch(
   requireRole(ROLES.ADMIN),
   asyncHandler(controller.approve),
 );
-router.get("/riders/delivery-per-day", asyncHandler(controller.deliveriesPerDay));
-router.post("/riders", asyncHandler(controller.create));
-router.get("/riders", asyncHandler(controller.list));
+router.get("/riders/delivery-per-day", authenticate, requireRole(ROLES.ADMIN), asyncHandler(controller.deliveriesPerDay));
+router.post("/riders", authenticate, asyncHandler(controller.create));
+router.get("/riders", authenticate, requireRole(ROLES.ADMIN), asyncHandler(controller.list));
 
 module.exports = router;
