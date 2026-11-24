@@ -19,6 +19,6 @@
     "firebase-admin": "^13.5.0",
     "mongodb": "^7.5.0",
     "nanoid": "^6.0.1",
-    "stripe": "^22.4.0"
+    "stripe": "^23.2.0"
   }
 }
