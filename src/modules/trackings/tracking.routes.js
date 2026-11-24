@@ -1,6 +1,6 @@
 const { Router } = require("express");
-const controller = require("../modules/trackings/tracking.controller");
-const asyncHandler = require("../shared/asyncHandler");
+const controller = require("./tracking.controller");
+const asyncHandler = require("../../shared/asyncHandler");
 
 const router = Router();
 

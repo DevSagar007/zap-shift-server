@@ -1,7 +1,7 @@
 const { Router } = require("express");
-const controller = require("../modules/payments/payment.controller");
-const { authenticate } = require("../middleware/auth");
-const asyncHandler = require("../shared/asyncHandler");
+const controller = require("./payment.controller");
+const { authenticate } = require("../../middleware/auth");
+const asyncHandler = require("../../shared/asyncHandler");
 
 const router = Router();
 

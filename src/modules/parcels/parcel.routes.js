@@ -1,6 +1,6 @@
 const { Router } = require("express");
-const controller = require("../modules/parcels/parcel.controller");
-const asyncHandler = require("../shared/asyncHandler");
+const controller = require("./parcel.controller");
+const asyncHandler = require("../../shared/asyncHandler");
 
 const router = Router();
 

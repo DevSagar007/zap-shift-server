@@ -1,8 +1,8 @@
 const { Router } = require("express");
-const controller = require("../modules/riders/rider.controller");
-const { authenticate, requireRole } = require("../middleware/auth");
-const asyncHandler = require("../shared/asyncHandler");
-const { ROLES } = require("../shared/constants");
+const controller = require("./rider.controller");
+const { authenticate, requireRole } = require("../../middleware/auth");
+const asyncHandler = require("../../shared/asyncHandler");
+const { ROLES } = require("../../shared/constants");
 
 const router = Router();
 

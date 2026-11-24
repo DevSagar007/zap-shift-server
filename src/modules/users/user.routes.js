@@ -1,8 +1,8 @@
 const { Router } = require("express");
-const controller = require("../modules/users/user.controller");
-const { authenticate, requireRole } = require("../middleware/auth");
-const asyncHandler = require("../shared/asyncHandler");
-const { ROLES } = require("../shared/constants");
+const controller = require("./user.controller");
+const { authenticate, requireRole } = require("../../middleware/auth");
+const asyncHandler = require("../../shared/asyncHandler");
+const { ROLES } = require("../../shared/constants");
 
 const router = Router();
 
