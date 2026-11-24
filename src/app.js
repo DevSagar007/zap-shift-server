@@ -15,9 +15,11 @@ app.use(
     origin: (origin, callback) => {
       const allowedOrigins = [
         process.env.SITE_DOMAIN,
+        process.env.CLIENT_ORIGIN,
+        "https://zap-shift-client-rho.vercel.app",
         "http://localhost:5173",
         "http://localhost:4173",
-      ].filter(Boolean);
+      ].filter(Boolean).map((value) => value.replace(/\/+$/, ""));
 
       if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
